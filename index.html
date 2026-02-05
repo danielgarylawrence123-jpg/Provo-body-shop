@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Provo Body Shop - Estimate Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -16,7 +17,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            background: #ffffff;
             min-height: 100vh;
             padding: 10px;
             margin: 0;
@@ -27,8 +28,9 @@
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
             overflow: hidden;
+            border: 2px solid #000000;
         }
 
         @media (max-width: 768px) {
@@ -43,18 +45,18 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+            background: #000000;
             color: white;
             padding: 20px 15px;
             text-align: center;
             position: relative;
-            border-bottom: 3px solid #ff6b00;
+            border-bottom: 3px solid #000000;
         }
 
         .header h1 {
             font-size: 2em;
             margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: none;
         }
 
         .header p {
@@ -69,6 +71,13 @@
             font-style: italic;
         }
 
+        .contact-phone {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.5em;
@@ -76,6 +85,10 @@
             
             .header p {
                 font-size: 0.9em;
+            }
+            
+            .contact-phone {
+                font-size: 1em;
             }
         }
 
@@ -88,11 +101,11 @@
             padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
-            border-left: 4px solid #ff6b00;
+            border-left: 4px solid #000000;
         }
 
         .section h2 {
-            color: #1a1a1a;
+            color: #000000;
             margin-bottom: 15px;
             font-size: 1.3em;
         }
@@ -149,7 +162,7 @@
         input[type="number"]:focus,
         select:focus {
             outline: none;
-            border-color: #ff6b00;
+            border-color: #000000;
         }
 
         .car-info-grid {
@@ -178,51 +191,10 @@
             position: relative;
         }
 
-        .part-item-grid {
-            display: grid;
-            grid-template-columns: 120px 1fr;
-            gap: 15px;
-            align-items: start;
-        }
-
         @media (max-width: 768px) {
             .part-item {
                 padding: 12px;
             }
-            
-            .part-item-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-        }
-
-        .part-image-container {
-            width: 120px;
-            height: 120px;
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-            cursor: pointer;
-            overflow: hidden;
-            position: relative;
-        }
-
-        @media (max-width: 768px) {
-            .part-image-container {
-                width: 100%;
-                max-width: 200px;
-                height: 150px;
-                margin: 0 auto;
-            }
-        }
-
-        .part-image-container img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: cover;
         }
 
         .part-image-placeholder {
@@ -299,35 +271,37 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+            background: #000000;
             color: white;
-            border: 2px solid #ff6b00;
+            border: 2px solid #000000;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 0, 0.4);
-            background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: #333333;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            background: #000000;
             color: white;
+            border: 2px solid #000000;
         }
 
         .btn-success:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: #333333;
         }
 
         .total-section {
-            background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+            background: #000000;
             color: white;
             padding: 25px;
             border-radius: 10px;
             margin-top: 30px;
             text-align: right;
-            border: 2px solid #ff6b00;
+            border: 2px solid #000000;
         }
 
         .total-section h3 {
@@ -354,36 +328,37 @@
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
-            border: none;
+            background: #000000;
+            border: 2px solid #000000;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
             transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(255, 107, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             flex-shrink: 0;
         }
 
         .mic-button-small:hover {
             transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            background: #333333;
         }
 
         .mic-button-small.listening {
             animation: pulse 1.5s infinite;
-            background: linear-gradient(135deg, #ff3333 0%, #ff6666 100%);
+            background: #666666;
         }
 
         @keyframes pulse {
             0%, 100% {
                 transform: scale(1);
-                box-shadow: 0 2px 8px rgba(255, 51, 51, 0.5);
+                box-shadow: 0 2px 8px rgba(102, 102, 102, 0.5);
             }
             50% {
                 transform: scale(1.1);
-                box-shadow: 0 4px 15px rgba(255, 51, 51, 0.8);
+                box-shadow: 0 4px 15px rgba(102, 102, 102, 0.8);
             }
         }
 
@@ -400,7 +375,13 @@
                 background: white;
             }
             .btn {
-                display: none;
+                display: none !important;
+            }
+            .mic-button-small {
+                display: none !important;
+            }
+            .remove-part-btn {
+                display: none !important;
             }
         }
     </style>
@@ -411,6 +392,7 @@
             <h1>Provo Body Shop</h1>
             <p>Professional Auto Body Repair Estimates</p>
             <p class="owner-name">Gary Lawrence</p>
+            <p class="contact-phone">📞 649-442-3615</p>
         </div>
 
         <div class="content">
@@ -475,8 +457,10 @@
             </div>
 
             <!-- Action Buttons -->
-            <div style="text-align: center; margin-top: 30px;">
-                <button class="btn btn-success" onclick="generatePDF()">📄 Generate PDF Estimate</button>
+            <div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+                <button class="btn btn-success" onclick="generatePDF()">📄 Download as PDF</button>
+                <button class="btn btn-success" onclick="generateJPG()">🖼️ Download as JPG</button>
+                <button class="btn btn-success" onclick="printEstimate()">🖨️ Print</button>
             </div>
         </div>
     </div>
@@ -662,47 +646,32 @@
             
             partItem.innerHTML = `
                 <button class="remove-part-btn" onclick="removePart(${partCounter})">✕ Remove</button>
-                <div class="part-item-grid">
-                    <div class="part-image-container" onclick="document.getElementById('imageInput-${partCounter}').click()">
-                        <div class="part-image-placeholder" id="placeholder-${partCounter}">
-                            Auto-generates<br>when part entered
+                <div class="part-details">
+                    <div class="part-name-number">
+                        <div class="form-group">
+                            <label>Part Name</label>
+                            <input type="text" id="partName-${partCounter}" placeholder="e.g., Front Bumper" onchange="calculateTotal()">
                         </div>
-                        <img id="image-${partCounter}" style="display: none;">
+                        <div class="form-group">
+                            <label>Part Number</label>
+                            <input type="text" id="partNumber-${partCounter}" placeholder="52119-06150" onchange="calculateTotal()">
+                        </div>
                     </div>
-                    <div class="part-details">
-                        <div class="part-name-number">
-                            <div class="form-group">
-                                <label>Part Name</label>
-                                <input type="text" id="partName-${partCounter}" placeholder="e.g., Front Bumper" 
-                                       onchange="generatePartImage(this.value, ${partCounter}); calculateTotal()" 
-                                       onblur="generatePartImage(this.value, ${partCounter})">
-                            </div>
-                            <div class="form-group">
-                                <label>Part Number</label>
-                                <input type="text" id="partNumber-${partCounter}" placeholder="52119-06150" onchange="calculateTotal()">
-                            </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Description</label>
+                        <input type="text" id="description-${partCounter}" placeholder="Additional details" onchange="calculateTotal()">
+                    </div>
+                    <div class="part-details-grid" style="margin-top: 10px;">
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" id="quantity-${partCounter}" value="1" min="1" onchange="calculateTotal()">
                         </div>
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>Description</label>
-                            <input type="text" id="description-${partCounter}" placeholder="Additional details" onchange="calculateTotal()">
-                        </div>
-                        <div class="part-details-grid" style="margin-top: 10px;">
-                            <div class="form-group">
-                                <label>Quantity</label>
-                                <input type="number" id="quantity-${partCounter}" value="1" min="1" onchange="calculateTotal()">
-                            </div>
-                            <div class="form-group">
-                                <label>Unit Price ($)</label>
-                                <input type="number" id="price-${partCounter}" placeholder="0.00" step="0.01" min="0" onchange="calculateTotal()">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>Line Total ($)</label>
-                            <input type="number" id="lineTotal-${partCounter}" placeholder="0.00" step="0.01" readonly style="background: #e9ecef;">
+                        <div class="form-group">
+                            <label>Unit Price ($)</label>
+                            <input type="number" id="price-${partCounter}" placeholder="0.00" step="0.01" min="0" onchange="calculateTotal()">
                         </div>
                     </div>
                 </div>
-                <input type="file" class="image-input" id="imageInput-${partCounter}" accept="image/*" onchange="handleImageUpload(${partCounter})">
             `;
             
             document.getElementById('partsContainer').appendChild(partItem);
@@ -717,47 +686,20 @@
             
             laborItem.innerHTML = `
                 <button class="remove-part-btn" onclick="removeLabor(${laborCounter})">✕ Remove</button>
-                <div class="part-item-grid">
-                    <div class="part-image-container" style="opacity: 0.5; cursor: default;">
-                        <div class="part-image-placeholder">
-                            🔧<br>Labor
-                        </div>
+                <div class="part-details">
+                    <div class="form-group">
+                        <label>Labor Description</label>
+                        <input type="text" id="laborName-${laborCounter}" placeholder="e.g., Paint & Refinish Front Bumper" onchange="calculateTotal()">
                     </div>
-                    <div class="part-details">
-                        <div class="form-group">
-                            <label>Labor Description</label>
-                            <input type="text" id="laborName-${laborCounter}" placeholder="e.g., Paint & Refinish Front Bumper" onchange="calculateTotal()">
-                        </div>
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>Labor Cost ($)</label>
-                            <input type="number" id="laborPrice-${laborCounter}" placeholder="0.00" step="0.01" min="0" onchange="calculateTotal()">
-                        </div>
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>Line Total ($)</label>
-                            <input type="number" id="laborLineTotal-${laborCounter}" placeholder="0.00" step="0.01" readonly style="background: #e9ecef;">
-                        </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Labor Cost ($)</label>
+                        <input type="number" id="laborPrice-${laborCounter}" placeholder="0.00" step="0.01" min="0" onchange="calculateTotal()">
                     </div>
                 </div>
             `;
             
             document.getElementById('laborContainer').appendChild(laborItem);
             labor.push(laborCounter);
-        }
-
-        function handleImageUpload(partId) {
-            const fileInput = document.getElementById(`imageInput-${partId}`);
-            const imgElement = document.getElementById(`image-${partId}`);
-            const placeholder = document.getElementById(`placeholder-${partId}`);
-            
-            if (fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imgElement.src = e.target.result;
-                    imgElement.style.display = 'block';
-                    placeholder.style.display = 'none';
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            }
         }
 
         function removePart(partId) {
@@ -782,16 +724,12 @@
                 const quantity = parseFloat(document.getElementById(`quantity-${partId}`).value) || 0;
                 const price = parseFloat(document.getElementById(`price-${partId}`).value) || 0;
                 const lineTotal = quantity * price;
-                
-                document.getElementById(`lineTotal-${partId}`).value = lineTotal.toFixed(2);
                 total += lineTotal;
             });
             
             // Calculate labor total
             labor.forEach(laborId => {
                 const price = parseFloat(document.getElementById(`laborPrice-${laborId}`).value) || 0;
-                
-                document.getElementById(`laborLineTotal-${laborId}`).value = price.toFixed(2);
                 total += price;
             });
             
@@ -803,18 +741,21 @@
             const doc = new jsPDF();
             
             // Header
-            doc.setFillColor(30, 60, 114);
-            doc.rect(0, 0, 210, 40, 'F');
+            doc.setFillColor(0, 0, 0);
+            doc.rect(0, 0, 210, 45, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(24);
-            doc.text('Provo Body Shop', 105, 20, { align: 'center' });
+            doc.text('Provo Body Shop', 105, 15, { align: 'center' });
             doc.setFontSize(12);
-            doc.text('Professional Auto Body Repair Estimate', 105, 30, { align: 'center' });
+            doc.text('Professional Auto Body Repair Estimates', 105, 25, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text('Gary Lawrence', 105, 32, { align: 'center' });
+            doc.text('649-442-3615', 105, 39, { align: 'center' });
             
             // Customer Info
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(10);
-            let y = 50;
+            let y = 55;
             
             doc.setFont(undefined, 'bold');
             doc.text('CUSTOMER & VEHICLE INFORMATION', 20, y);
@@ -848,9 +789,8 @@
                 doc.rect(20, y, 170, 8, 'F');
                 doc.text('Part Name', 22, y + 5);
                 doc.text('Part #', 80, y + 5);
-                doc.text('Qty', 120, y + 5);
-                doc.text('Price', 140, y + 5);
-                doc.text('Total', 170, y + 5);
+                doc.text('Qty', 130, y + 5);
+                doc.text('Price', 160, y + 5);
                 doc.setFont(undefined, 'normal');
                 y += 10;
                 
@@ -859,13 +799,11 @@
                     const partNumber = document.getElementById(`partNumber-${partId}`).value || 'N/A';
                     const quantity = document.getElementById(`quantity-${partId}`).value || '0';
                     const price = document.getElementById(`price-${partId}`).value || '0';
-                    const lineTotal = parseFloat(document.getElementById(`lineTotal-${partId}`).value) || 0;
                     
                     doc.text(partName.substring(0, 25), 22, y);
-                    doc.text(partNumber, 80, y);
-                    doc.text(quantity, 120, y);
-                    doc.text(`$${parseFloat(price).toFixed(2)}`, 140, y);
-                    doc.text(`$${lineTotal.toFixed(2)}`, 170, y);
+                    doc.text(partNumber.substring(0, 20), 80, y);
+                    doc.text(quantity, 130, y);
+                    doc.text(`$${parseFloat(price).toFixed(2)}`, 160, y);
                     
                     y += 6;
                     
@@ -888,16 +826,16 @@
                 doc.setFillColor(240, 240, 240);
                 doc.rect(20, y, 170, 8, 'F');
                 doc.text('Description', 22, y + 5);
-                doc.text('Cost', 170, y + 5);
+                doc.text('Cost', 160, y + 5);
                 doc.setFont(undefined, 'normal');
                 y += 10;
                 
                 labor.forEach(laborId => {
                     const laborName = document.getElementById(`laborName-${laborId}`).value || 'N/A';
-                    const lineTotal = parseFloat(document.getElementById(`laborLineTotal-${laborId}`).value) || 0;
+                    const laborCost = parseFloat(document.getElementById(`laborPrice-${laborId}`).value) || 0;
                     
                     doc.text(laborName.substring(0, 50), 22, y);
-                    doc.text(`$${lineTotal.toFixed(2)}`, 170, y);
+                    doc.text(`$${laborCost.toFixed(2)}`, 160, y);
                     
                     y += 6;
                     
@@ -912,10 +850,12 @@
             // Calculate total
             let total = 0;
             parts.forEach(partId => {
-                total += parseFloat(document.getElementById(`lineTotal-${partId}`).value) || 0;
+                const quantity = parseFloat(document.getElementById(`quantity-${partId}`).value) || 0;
+                const price = parseFloat(document.getElementById(`price-${partId}`).value) || 0;
+                total += quantity * price;
             });
             labor.forEach(laborId => {
-                total += parseFloat(document.getElementById(`laborLineTotal-${laborId}`).value) || 0;
+                total += parseFloat(document.getElementById(`laborPrice-${laborId}`).value) || 0;
             });
             
             // Total
@@ -931,6 +871,40 @@
             
             // Save PDF
             doc.save(`Provo_Body_Shop_Estimate_${Date.now()}.pdf`);
+        }
+
+        async function generateJPG() {
+            // Hide only action buttons and remove buttons, keep header visible with phone number
+            const buttons = document.querySelectorAll('.btn, .mic-button-small, .remove-part-btn');
+            buttons.forEach(btn => btn.style.display = 'none');
+            
+            try {
+                const container = document.querySelector('.container');
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+                
+                // Convert canvas to JPG
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.download = `Provo_Body_Shop_Estimate_${Date.now()}.jpg`;
+                link.href = imgData;
+                link.click();
+            } catch (error) {
+                console.error('Error generating JPG:', error);
+                alert('Error generating JPG. Please try again.');
+            } finally {
+                // Show buttons again
+                buttons.forEach(btn => btn.style.display = '');
+            }
+        }
+
+        function printEstimate() {
+            window.print();
         }
 
         // Add initial part and labor
