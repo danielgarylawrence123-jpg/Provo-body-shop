@@ -1328,7 +1328,26 @@ async function renderInvoiceCanvas() {
 
     // Inline the full stylesheet so CSS vars resolve correctly
     const styleEl = document.createElement('style');
-    styleEl.textContent = allCSS;
+    styleEl.textContent = allCSS + `
+        /* FORCE DESKTOP LAYOUT - override mobile responsive CSS */
+        .inv-header { padding: 36px 40px 28px !important; }
+        .inv-header-top { 
+            flex-direction: row !important; 
+            justify-content: space-between !important;
+            align-items: flex-start !important;
+            gap: 0 !important;
+        }
+        .inv-doc-badge { text-align: right !important; }
+        .inv-address-row { 
+            flex-direction: row !important; 
+            padding: 28px 40px !important; 
+            gap: 30px !important;
+        }
+        .inv-body { padding: 20px 40px !important; }
+        .inv-footer { padding: 0 40px 30px !important; }
+        .inv-grand-amount { font-size: 32px !important; }
+        .inv-overview { margin: 0 40px 0 !important; padding: 18px 40px !important; }
+    `;
     wrapper.appendChild(styleEl);
 
     const inner = document.createElement('div');
@@ -1370,12 +1389,32 @@ async function exportPDF() {
     const pxW = canvas.width;
     const pxH = canvas.height;
 
-    // A4 width = 210mm. Scale height proportionally.
-    const pdfW = 210;
-    const pdfH = (pxH / pxW) * pdfW;
-
-    const doc = new jsPDF({ orientation: pdfH > pdfW ? 'portrait' : 'landscape', unit: 'mm', format: [pdfW, pdfH] });
-    doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+    // US Letter size: 8.5" × 11" = 215.9mm × 279.4mm
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+    
+    const pageW = 215.9;  // Letter width in mm
+    const pageH = 279.4;  // Letter height in mm
+    
+    // Scale image to fit within letter size while maintaining aspect ratio
+    const imgAspect = pxW / pxH;
+    const pageAspect = pageW / pageH;
+    
+    let finalW, finalH;
+    if (imgAspect > pageAspect) {
+        // Image is wider - fit to width
+        finalW = pageW;
+        finalH = pageW / imgAspect;
+    } else {
+        // Image is taller - fit to height
+        finalH = pageH;
+        finalW = pageH * imgAspect;
+    }
+    
+    // Center the image on the page
+    const x = (pageW - finalW) / 2;
+    const y = (pageH - finalH) / 2;
+    
+    doc.addImage(imgData, 'JPEG', x, y, finalW, finalH);
     doc.save(getExportFilename('pdf'));
 }
 
@@ -1456,6 +1495,12 @@ function printInvoice() {
         .print-toolbar{display:none!important;}
         body{background:white;}
         .doc-wrapper{margin:0;border-radius:0;box-shadow:none;}
+    }
+    /* Force desktop layout on all screen sizes */
+    @media (max-width: 768px) {
+        .inv-header-top{flex-direction:row!important;justify-content:space-between!important;}
+        .inv-doc-badge{text-align:right!important;}
+        .inv-address-row{flex-direction:row!important;gap:30px!important;}
     }
     </style></head><body>
     <div class="print-toolbar">
