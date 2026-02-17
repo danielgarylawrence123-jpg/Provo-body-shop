@@ -345,6 +345,7 @@
             transition: all 0.2s;
         }
         .export-btn:hover { background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(37,99,171,0.35); }
+        .export-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
         /* ══════════════════════════════════════
            PROFESSIONAL INVOICE PREVIEW STYLES
@@ -854,8 +855,8 @@
         </div>
 
         <div class="export-buttons">
-            <button class="export-btn" onclick="exportPDF()">📄 Export PDF</button>
-            <button class="export-btn" onclick="exportJPG()">🖼️ Export JPG</button>
+            <button class="export-btn" id="btnPDF" onclick="runExport('exportPDF', this, '📄 Generating...')">📄 Export PDF</button>
+            <button class="export-btn" id="btnJPG" onclick="runExport('exportJPG', this, '🖼️ Rendering...')">🖼️ Export JPG</button>
             <button class="export-btn" onclick="printInvoice()">🖨️ Print</button>
             <button class="export-btn" onclick="emailInvoice()">📧 Email</button>
         </div>
@@ -1315,252 +1316,75 @@ function closePreview() { document.getElementById('previewModal').style.display 
 window.onclick = e => { if (e.target === document.getElementById('previewModal')) closePreview(); };
 
 /* ── PDF EXPORT (uses professional layout data) ── */
+/* ── SHARED RENDER: captures the exact same HTML+CSS as the preview ── */
+async function renderInvoiceCanvas() {
+    // Pull all <style> content from the page so the hidden div inherits identical CSS
+    const allCSS = Array.from(document.styleSheets)
+        .map(ss => { try { return Array.from(ss.cssRules).map(r => r.cssText).join('\n'); } catch(e){ return ''; } })
+        .join('\n');
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:860px;background:white;z-index:-1;';
+
+    // Inline the full stylesheet so CSS vars resolve correctly
+    const styleEl = document.createElement('style');
+    styleEl.textContent = allCSS;
+    wrapper.appendChild(styleEl);
+
+    const inner = document.createElement('div');
+    inner.innerHTML = buildInvoiceHTML();
+    wrapper.appendChild(inner);
+
+    document.body.appendChild(wrapper);
+
+    // Wait a tick for layout + fonts
+    await new Promise(r => setTimeout(r, 400));
+
+    const canvas = await html2canvas(wrapper, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        width: 860,
+        scrollX: 0,
+        scrollY: 0
+    });
+
+    document.body.removeChild(wrapper);
+    return canvas;
+}
+
+function getExportFilename(ext) {
+    const invNum = (window._invNum || ('#' + String(parseInt(localStorage.getItem('invoiceNumber')||'1')).padStart(4,'0'))).replace('#','');
+    const name = document.getElementById('customerName').value.replace(/\s+/g,'_') || 'customer';
+    return `${documentType}_${invNum}_${name}.${ext}`;
+}
+
+/* ── PDF EXPORT ── */
 async function exportPDF() {
     saveCurrentVehicle();
+    const canvas = await renderInvoiceCanvas();
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const t = translations[currentLanguage];
-    const docLabel = documentType === 'estimate' ? t.document_type_estimate : t.document_type_invoice;
-    const totalLabel = documentType === 'estimate' ? t.total_estimate : t.total_invoice;
-    const invNum = window._invNum || ('#' + String(parseInt(localStorage.getItem('invoiceNumber')||'1')).padStart(4,'0'));
-    const date = document.getElementById('estimateDate').value;
 
-    // Navy header band
-    doc.setFillColor(10, 22, 40);
-    doc.rect(0, 0, 210, 42, 'F');
-    // Blue accent line
-    doc.setFillColor(37, 99, 171);
-    doc.rect(0, 42, 210, 3, 'F');
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+    const pxW = canvas.width;
+    const pxH = canvas.height;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(255, 255, 255);
-    doc.text('Provo Body Shop', 15, 18);
+    // A4 width = 210mm. Scale height proportionally.
+    const pdfW = 210;
+    const pdfH = (pxH / pxW) * pdfW;
 
-    doc.setFontSize(8);
-    doc.setTextColor(96, 165, 250);
-    doc.text('PROFESSIONAL AUTO BODY REPAIR', 15, 26);
-
-    // Doc type top right
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(docLabel.toUpperCase(), 195, 16, { align: 'right' });
-    doc.setFontSize(9);
-    doc.setTextColor(96, 165, 250);
-    doc.text(invNum, 195, 24, { align: 'right' });
-    doc.setTextColor(180, 180, 200);
-    doc.text(date, 195, 31, { align: 'right' });
-
-    let y = 54;
-
-    // FROM / BILL TO
-    doc.setFillColor(248, 250, 252);
-    doc.rect(0, y - 4, 210, 36, 'F');
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(37, 99, 171);
-    doc.text('FROM', 15, y + 2);
-    doc.text('BILL TO', 110, y + 2);
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(10, 22, 40);
-    doc.text('Provo Body Shop', 15, y + 9);
-    doc.text(document.getElementById('customerName').value || '—', 110, y + 9);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    doc.text('gads_law@hotmail.com', 15, y + 15);
-    doc.text('649-442-3615', 15, y + 21);
-    doc.text('Norway Drive Kewtown', 15, y + 27);
-
-    const cEmail = document.getElementById('customerEmail').value;
-    const cPhone = document.getElementById('customerPhone').value;
-    const cAddr = document.getElementById('customerAddress').value;
-    if (cEmail) doc.text(cEmail, 110, y + 15);
-    if (cPhone) doc.text(cPhone, 110, y + 21);
-    if (cAddr) { const wrapped = doc.splitTextToSize(cAddr, 80); doc.text(wrapped, 110, y + 27); }
-
-    y += 44;
-
-    // Work overview
-    const overview = document.getElementById('workOverview').value;
-    if (overview) {
-        doc.setFillColor(219, 234, 254);
-        doc.rect(15, y, 3, 12, 'F');
-        doc.setFillColor(240, 247, 255);
-        doc.rect(18, y, 177, 12, 'F');
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(26, 58, 107);
-        doc.text('WORK DESCRIPTION', 22, y + 5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(30, 41, 59);
-        const lines = doc.splitTextToSize(overview, 165);
-        if (lines.length > 0) doc.text(lines[0], 22, y + 10);
-        y += 18;
-    }
-
-    // Vehicles
-    vehicles.forEach((v, vi) => {
-        if (y > 245) { doc.addPage(); y = 20; }
-
-        // Vehicle header
-        doc.setFillColor(10, 22, 40);
-        doc.rect(0, y, 210, 10, 'F');
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.text(`Vehicle ${vi+1}  ·  ${v.year} ${v.make} ${v.model}`, 15, y + 7);
-        doc.setTextColor(96, 165, 250);
-        doc.text(`License: ${v.number || '—'}`, 195, y + 7, { align: 'right' });
-        y += 14;
-
-        // Parts
-        if (v.parts.length > 0) {
-            doc.setFillColor(241, 245, 249);
-            doc.rect(0, y, 210, 7, 'F');
-            doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 58, 107);
-            doc.text('PARTS', 15, y + 5);
-            y += 9;
-            doc.setFillColor(219, 234, 254);
-            doc.rect(0, y, 210, 6, 'F');
-            doc.setFontSize(7); doc.setTextColor(26, 58, 107);
-            doc.text('Description', 15, y + 4);
-            doc.text('Qty', 130, y + 4, { align: 'center' });
-            doc.text('Unit Price', 160, y + 4, { align: 'center' });
-            doc.text('Total', 195, y + 4, { align: 'right' });
-            y += 8;
-            v.parts.forEach((p, pi) => {
-                if (y > 270) { doc.addPage(); y = 20; }
-                if (pi % 2 === 0) { doc.setFillColor(248,250,252); doc.rect(0,y-1,210,6,'F'); }
-                doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(30,41,59);
-                doc.text(p.name || '—', 15, y+3);
-                doc.text(String(p.qty), 130, y+3, { align:'center' });
-                doc.text(fmt(p.price), 160, y+3, { align:'center' });
-                doc.setFont('helvetica','bold');
-                doc.text(fmt(p.qty*p.price), 195, y+3, { align:'right' });
-                y += 6;
-            });
-            y += 2;
-        }
-
-        // Labor
-        if (v.labor.length > 0) {
-            if (y > 255) { doc.addPage(); y = 20; }
-            doc.setFillColor(241,245,249); doc.rect(0,y,210,7,'F');
-            doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(26,58,107);
-            doc.text('LABOR', 15, y+5);
-            y += 9;
-            doc.setFillColor(219,234,254); doc.rect(0,y,210,6,'F');
-            doc.setFontSize(7); doc.setTextColor(26,58,107);
-            doc.text('Description', 15, y+4);
-            doc.text('Amount', 195, y+4, { align:'right' });
-            y += 8;
-            v.labor.forEach((l, li) => {
-                if (y > 270) { doc.addPage(); y = 20; }
-                if (li % 2 === 0) { doc.setFillColor(248,250,252); doc.rect(0,y-1,210,6,'F'); }
-                doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(71,85,105);
-                doc.text(l.description || '—', 15, y+3);
-                doc.setFont('helvetica','bold'); doc.setTextColor(30,41,59);
-                doc.text(fmt(l.cost), 195, y+3, { align:'right' });
-                y += 6;
-            });
-            y += 2;
-        }
-
-        // Subtotal
-        const vt = getVehicleTotal(v);
-        doc.setFillColor(219, 234, 254);
-        doc.rect(0, y, 210, 8, 'F');
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(26, 58, 107);
-        doc.text(`Vehicle ${vi+1} Subtotal`, 15, y+5.5);
-        doc.text(fmt(vt), 195, y+5.5, { align:'right' });
-        y += 14;
-    });
-
-    // Grand total footer
-    if (y > 240) { doc.addPage(); y = 20; }
-    doc.setFillColor(10, 22, 40);
-    doc.rect(0, y, 210, 30, 'F');
-    // Summary lines
-    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(180,190,210);
-    let sy = y + 8;
-    vehicles.forEach((v,vi) => {
-        doc.text(`Vehicle ${vi+1}: ${v.year} ${v.make} ${v.model}`, 15, sy);
-        doc.text(fmt(getVehicleTotal(v)), 195, sy, { align:'right' });
-        sy += 6;
-    });
-    // Total
-    doc.setFillColor(37, 99, 171);
-    doc.rect(0, y + 28, 210, 14, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(200,220,255);
-    doc.text(totalLabel.toUpperCase(), 15, y+37);
-    doc.setFontSize(14); doc.setTextColor(255,255,255);
-    doc.text(fmt(getGrandTotal()), 195, y+37, { align:'right' });
-
-    const name = document.getElementById('customerName').value.replace(/\s+/g,'_');
-    doc.save(`${documentType}_${invNum}_${name}.pdf`);
+    const doc = new jsPDF({ orientation: pdfH > pdfW ? 'portrait' : 'landscape', unit: 'mm', format: [pdfW, pdfH] });
+    doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+    doc.save(getExportFilename('pdf'));
 }
 
 /* ── JPG EXPORT ── */
 async function exportJPG() {
     saveCurrentVehicle();
-    const temp = document.createElement('div');
-    temp.style.cssText = 'position:absolute;left:-9999px;width:820px;font-family:Inter,sans-serif;';
-    temp.innerHTML = buildInvoiceHTML();
-    document.body.appendChild(temp);
-    // Inject Google Fonts for export
-    const style = document.createElement('style');
-    style.textContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap');
-    .inv-header{background:linear-gradient(135deg,#0a1628 0%,#1e4d8c 60%,#2563ab 100%);padding:36px 40px 28px;}
-    .inv-company-name{font-family:Montserrat,sans-serif;font-size:28px;font-weight:800;color:white;}
-    .inv-company-tagline{font-size:12px;color:#60a5fa;margin-top:5px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;}
-    .inv-catchphrase{margin-top:8px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:0.3px;}
-    .inv-catchphrase em{font-style:normal;color:white;font-weight:800;}
-    .inv-doc-type{font-family:Montserrat,sans-serif;font-size:32px;font-weight:800;color:white;text-transform:uppercase;}
-    .inv-doc-number{font-size:14px;color:#60a5fa;margin-top:4px;font-weight:600;}
-    .inv-doc-date{font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;}
-    .inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;}
-    .inv-divider{height:4px;background:linear-gradient(90deg,#60a5fa 0%,#3b82cc 50%,transparent 100%);margin-top:24px;}
-    .inv-address-row{display:flex;justify-content:space-between;padding:28px 40px;background:#f8fafc;border-bottom:1px solid #e2e8f0;gap:30px;}
-    .inv-address-label{font-size:10px;font-weight:700;color:#2563ab;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
-    .inv-address-content{font-size:13px;line-height:1.7;color:#1e293b;}
-    .inv-address-content strong{font-size:15px;font-weight:700;color:#0a1628;display:block;margin-bottom:2px;}
-    .inv-body{padding:20px 40px;}
-    .inv-vehicle-block{margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;}
-    .inv-vehicle-header{background:linear-gradient(135deg,#0a1628 0%,#1a3a6b 100%);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;}
-    .inv-vehicle-title{font-family:Montserrat,sans-serif;font-size:14px;font-weight:700;color:white;}
-    .inv-vehicle-num{font-size:12px;color:#60a5fa;font-weight:500;}
-    .inv-table{width:100%;border-collapse:collapse;}
-    .inv-table-section-header{background:#f1f5f9;padding:8px 20px;}
-    .inv-table-section-header td{font-size:10px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:1.5px;padding:8px 20px;}
-    .inv-table th{background:#dbeafe;padding:9px 20px;font-size:11px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:1px;text-align:left;}
-    .inv-table th:last-child{text-align:right;}
-    .inv-table th:nth-child(2),.inv-table th:nth-child(3){text-align:center;}
-    .inv-table td{padding:10px 20px;font-size:13px;color:#1e293b;border-bottom:1px solid #f1f5f9;}
-    .inv-table td:last-child{text-align:right;font-weight:600;}
-    .inv-table td:nth-child(2),.inv-table td:nth-child(3){text-align:center;color:#475569;}
-    .inv-subtotal-row{background:linear-gradient(90deg,#dbeafe 0%,rgba(219,234,254,0.3) 100%);border-top:2px solid #3b82cc;}
-    .inv-subtotal-row td{padding:11px 20px;font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;color:#1a3a6b!important;border-bottom:none!important;}
-    .inv-footer{background:linear-gradient(135deg,#0a1628 0%,#1a3a6b 100%);padding:0 40px 30px;}
-    .inv-vehicle-summary{padding:20px 0 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;}
-    .inv-summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:rgba(255,255,255,0.7);}
-    .inv-summary-row span:last-child{font-weight:600;color:rgba(255,255,255,0.9);}
-    .inv-grand-total-row{display:flex;justify-content:space-between;align-items:center;padding-top:4px;}
-    .inv-grand-label{font-family:Montserrat,sans-serif;font-size:14px;font-weight:700;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:2px;}
-    .inv-grand-amount{font-family:Montserrat,sans-serif;font-size:32px;font-weight:800;color:white;}
-    .inv-grand-accent{width:50px;height:3px;background:linear-gradient(90deg,#60a5fa,transparent);margin-top:6px;}
-    .inv-disclaimer{padding:14px 40px;background:#f1f5f9;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;}`;
-    temp.appendChild(style);
-    const canvas = await html2canvas(temp, { scale:2, backgroundColor:'#ffffff', useCORS:true });
-    document.body.removeChild(temp);
+    const canvas = await renderInvoiceCanvas();
     const link = document.createElement('a');
-    const name = document.getElementById('customerName').value.replace(/\s+/g,'_');
-    const invNum = window._invNum || ('#' + String(parseInt(localStorage.getItem('invoiceNumber')||'1')).padStart(4,'0'));
-    link.download = `${documentType}_${invNum}_${name}.jpg`;
+    link.download = getExportFilename('jpg');
     link.href = canvas.toDataURL('image/jpeg', 0.95);
     link.click();
 }
@@ -1642,6 +1466,19 @@ function printInvoice() {
     <div class="doc-wrapper">${invHTML}</div>
     </body></html>`);
     pw.document.close();
+}
+
+/* ── EXPORT WRAPPER: shows loading state ── */
+async function runExport(fnName, btn, loadingLabel) {
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = loadingLabel;
+    try {
+        await window[fnName]();
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+    }
 }
 
 /* ── EMAIL ── */
