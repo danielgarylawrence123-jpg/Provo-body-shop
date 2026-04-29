@@ -712,6 +712,115 @@
             font-style: italic;
         }
 
+        /* ── CUSTOMER MODAL ── */
+        .cust-modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(3px);
+            z-index: 3000;
+            align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .cust-modal-overlay[style*="flex"] { display: flex; }
+        .cust-modal {
+            background: white;
+            border-radius: 12px;
+            width: 100%; max-width: 560px;
+            max-height: 82vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        .cust-modal-header {
+            background: linear-gradient(135deg, var(--navy), var(--blue-dark));
+            padding: 14px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0;
+        }
+        .cust-modal-header span:first-child {
+            color: var(--blue-accent);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .cust-modal-close {
+            color: rgba(255,255,255,0.6); font-size: 24px;
+            cursor: pointer; line-height: 1; transition: color 0.2s;
+        }
+        .cust-modal-close:hover { color: white; }
+        .cust-search-bar { padding: 12px 16px; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
+        .cust-search-bar input {
+            width: 100%; padding: 9px 13px;
+            border: 1.5px solid var(--gray-200); border-radius: 7px;
+            font-size: 13px; font-family: 'Inter', sans-serif;
+            color: var(--gray-800); background: var(--off-white);
+        }
+        .cust-search-bar input:focus { outline: none; border-color: var(--blue); background: white; }
+        .cust-modal-list { overflow-y: auto; flex: 1; }
+        .cust-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            gap: 12px; transition: background 0.15s;
+        }
+        .cust-row:hover { background: var(--blue-pale); }
+        .cust-info { flex: 1; min-width: 0; }
+        .cust-name { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 2px; }
+        .cust-meta { font-size: 11px; color: var(--gray-600); margin-bottom: 2px; }
+        .cust-job { font-size: 11px; color: var(--blue); font-weight: 500; }
+        .cust-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .cust-btn {
+            padding: 7px 12px; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 12px; font-weight: 600;
+            font-family: 'Inter', sans-serif; transition: all 0.2s; white-space: nowrap;
+        }
+        .cust-btn-full { background: var(--blue); color: white; }
+        .cust-btn-full:hover { background: var(--blue-dark); }
+        .cust-btn-new { background: var(--gray-100); color: var(--gray-800); border: 1px solid var(--gray-200); }
+        .cust-btn-new:hover { background: var(--gray-200); }
+
+        /* History pane */
+        .cust-history-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px;
+            background: var(--gray-100);
+            border-bottom: 1px solid var(--gray-200);
+            flex-shrink: 0;
+        }
+        .cust-back-btn {
+            background: none; border: none; color: var(--blue);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'Inter', sans-serif; padding: 4px 0;
+        }
+        .cust-back-btn:hover { color: var(--blue-dark); }
+        #custHistoryTitle {
+            flex: 1; font-size: 14px; font-weight: 700;
+            color: var(--navy); font-family: 'Montserrat', sans-serif;
+        }
+        .hist-row {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .hist-row:last-child { border-bottom: none; }
+        .hist-job-title {
+            font-size: 13px; font-weight: 600; color: var(--navy);
+            margin-bottom: 6px; line-height: 1.4;
+        }
+        .hist-meta {
+            display: flex; flex-wrap: wrap; gap: 6px 12px;
+            align-items: center; font-size: 11px;
+        }
+        .hist-date { color: var(--gray-600); }
+        .hist-badge {
+            padding: 2px 7px; border-radius: 3px;
+            font-size: 10px; font-weight: 700;
+            font-family: 'Montserrat', sans-serif; letter-spacing: 0.5px;
+        }
+        .hist-badge-estimate { background: #fef3c7; color: #92400e; }
+        .hist-badge-invoice  { background: #d1fae5; color: #065f46; }
+        .hist-vehicles { color: var(--gray-600); }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             .content { padding: 15px; }
@@ -863,6 +972,34 @@
     </div>
 </div>
 
+<!-- CUSTOMER MODAL -->
+<div id="customerModal" class="cust-modal-overlay" onclick="if(event.target===this)closeCustomerModal()">
+    <div class="cust-modal">
+        <div class="cust-modal-header">
+            <span id="custModalHeaderTitle">Customers</span>
+            <span class="cust-modal-close" onclick="closeCustomerModal()">×</span>
+        </div>
+
+        <!-- LIST PANE -->
+        <div id="custListPane">
+            <div class="cust-search-bar">
+                <input type="text" id="custSearchInput" placeholder="Search by name, phone, or email…" oninput="filterCustomers()">
+            </div>
+            <div id="custModalList" class="cust-modal-list"></div>
+        </div>
+
+        <!-- HISTORY PANE -->
+        <div id="custHistoryPane" style="display:none;">
+            <div class="cust-history-header">
+                <button class="cust-back-btn" onclick="historyBack()">← Back</button>
+                <span id="custHistoryTitle"></span>
+                <button class="cust-btn cust-btn-new" onclick="applyCustomer(_custModalIndex, -1)" style="font-size:12px;padding:6px 12px;">+ New Job</button>
+            </div>
+            <div id="custHistoryList" class="cust-modal-list"></div>
+        </div>
+    </div>
+</div>
+
 <!-- PREVIEW MODAL -->
 <div id="previewModal" class="preview-modal">
     <div class="preview-content">
@@ -959,6 +1096,18 @@ document.addEventListener('DOMContentLoaded', () => {
     loadVehicle(0);
     updateTranslations();
     updateInvoiceNumber();
+
+    // Auto-save: attach to all customer + job form fields
+    ['customerName','customerEmail','customerPhone','customerAddress','workOverview','estimateDate']
+        .forEach(id => document.getElementById(id).addEventListener('input', scheduleAutoSave));
+
+    // Auto-save on vehicle field changes (delegated — covers dynamically added parts/labor)
+    document.getElementById('partsList').addEventListener('input', scheduleAutoSave);
+    document.getElementById('laborList').addEventListener('input', scheduleAutoSave);
+    document.getElementById('vehicleMake').addEventListener('input', scheduleAutoSave);
+    document.getElementById('vehicleModel').addEventListener('input', scheduleAutoSave);
+    document.getElementById('vehicleYear').addEventListener('input', scheduleAutoSave);
+    document.getElementById('vehicleNumber').addEventListener('input', scheduleAutoSave);
 });
 
 function setLanguage(lang) {
@@ -1010,21 +1159,189 @@ function newInvoice() {
     toggleMenu();
 }
 
+/* ── AUTO-SAVE ── */
+let _autoSaveTimer = null;
+function scheduleAutoSave() {
+    clearTimeout(_autoSaveTimer);
+    _autoSaveTimer = setTimeout(() => {
+        saveCurrentVehicle();
+        const phone = document.getElementById('customerPhone').value.trim();
+        if (!phone && !document.getElementById('customerName').value.trim()) return;
+        const draft = {
+            customer: {
+                name: document.getElementById('customerName').value,
+                email: document.getElementById('customerEmail').value,
+                phone,
+                address: document.getElementById('customerAddress').value,
+                date: document.getElementById('estimateDate').value,
+                workOverview: document.getElementById('workOverview').value
+            },
+            vehicles: JSON.parse(JSON.stringify(vehicles)),
+            documentType,
+            language: currentLanguage
+        };
+        localStorage.setItem('invoiceDraft', JSON.stringify(draft));
+        if (phone) {
+            let customers = JSON.parse(localStorage.getItem('customers') || '[]');
+            const ci = customers.findIndex(c => c.phone === phone);
+            const jobEntry = {
+                savedAt: new Date().toISOString(),
+                date: draft.customer.date,
+                workOverview: draft.customer.workOverview,
+                vehicles: draft.vehicles,
+                documentType: draft.documentType,
+                language: draft.language
+            };
+            if (ci >= 0) {
+                customers[ci].name = draft.customer.name;
+                customers[ci].email = draft.customer.email;
+                customers[ci].address = draft.customer.address;
+                customers[ci].jobs = customers[ci].jobs || [];
+                // Only push a new history entry if this is a new session (>5 min since last save)
+                const last = customers[ci].jobs[0];
+                const minsSinceLast = last ? (Date.now() - new Date(last.savedAt)) / 60000 : 999;
+                if (minsSinceLast > 5) {
+                    customers[ci].jobs.unshift(jobEntry);
+                } else {
+                    customers[ci].jobs[0] = jobEntry; // update in-place if same session
+                }
+            } else {
+                customers.push({
+                    name: draft.customer.name,
+                    email: draft.customer.email,
+                    phone,
+                    address: draft.customer.address,
+                    jobs: [jobEntry]
+                });
+            }
+            localStorage.setItem('customers', JSON.stringify(customers));
+        }
+    }, 2000); // 2 seconds after last keystroke
+}
+
+/* ── CUSTOMER MODAL ── */
+let _custModalIndex = null; // which customer is expanded to show history
+
 function loadCustomer() {
     const saved = localStorage.getItem('customers');
-    if (!saved) { alert('No saved customers found!'); toggleMenu(); return; }
-    const customers = JSON.parse(saved);
-    let list = 'Saved Customers:\n\n';
-    customers.forEach((c,i) => list += `${i+1}. ${c.name} - ${c.phone}\n`);
-    const choice = prompt(list + '\nEnter customer number to load:');
-    if (choice && customers[parseInt(choice)-1]) {
-        const c = customers[parseInt(choice)-1];
-        document.getElementById('customerName').value = c.name;
-        document.getElementById('customerEmail').value = c.email;
-        document.getElementById('customerPhone').value = c.phone;
-        document.getElementById('customerAddress').value = c.address;
+    if (!saved || JSON.parse(saved).length === 0) {
+        alert('No saved customers found!'); toggleMenu(); return;
     }
     toggleMenu();
+    _custModalIndex = null;
+    renderCustomerList('');
+    document.getElementById('custSearchInput').value = '';
+    document.getElementById('custHistoryPane').style.display = 'none';
+    document.getElementById('custListPane').style.display = 'block';
+    document.getElementById('customerModal').style.display = 'flex';
+}
+
+function renderCustomerList(query) {
+    const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+    const q = query.toLowerCase();
+    const filtered = customers.filter((c, i) => {
+        c._origIndex = i;
+        return !q || (c.name||'').toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.email||'').toLowerCase().includes(q);
+    });
+    if (filtered.length === 0) {
+        document.getElementById('custModalList').innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">No customers match your search.</div>';
+        return;
+    }
+    document.getElementById('custModalList').innerHTML = filtered.map(c => {
+        const jobCount = (c.jobs || []).length;
+        return `
+        <div class="cust-row" data-index="${c._origIndex}">
+            <div class="cust-info">
+                <div class="cust-name">${c.name || '—'}</div>
+                <div class="cust-meta">${c.phone || ''}${c.email ? ' · ' + c.email : ''}</div>
+                <div class="cust-job">${jobCount} saved job${jobCount !== 1 ? 's' : ''}</div>
+            </div>
+            <div class="cust-actions">
+                ${jobCount > 0 ? `<button class="cust-btn cust-btn-full" onclick="showJobHistory(${c._origIndex})">📋 History</button>` : ''}
+                <button class="cust-btn cust-btn-new" onclick="applyCustomer(${c._origIndex}, -1)">+ New Job</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function showJobHistory(custIndex) {
+    const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+    const c = customers[custIndex];
+    if (!c) return;
+    _custModalIndex = custIndex;
+    document.getElementById('custHistoryTitle').textContent = c.name || 'Customer';
+    const jobs = c.jobs || [];
+    document.getElementById('custHistoryList').innerHTML = jobs.map((job, ji) => {
+        const vCount = (job.vehicles || []).length;
+        const vList = (job.vehicles || []).map(v => [v.year, v.make, v.model].filter(Boolean).join(' ') || '—').join(' · ');
+        const date = job.date
+            ? new Date(job.date + 'T12:00:00').toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})
+            : '—';
+        const docBadge = job.documentType === 'invoice' ? 'INVOICE' : 'ESTIMATE';
+        // Service title: use workOverview (truncated) or fall back to vehicle list
+        const serviceTitle = job.workOverview
+            ? (job.workOverview.length > 70 ? job.workOverview.slice(0, 70) + '…' : job.workOverview)
+            : (vList || 'No description');
+        return `
+        <div class="hist-row">
+            <div class="hist-job-title">${serviceTitle}</div>
+            <div class="hist-meta">
+                <span class="hist-date">📅 ${date}</span>
+                <span class="hist-badge hist-badge-${job.documentType || 'estimate'}">${docBadge}</span>
+                <span class="hist-vehicles">🚗 ${vCount} vehicle${vCount !== 1 ? 's' : ''}: ${vList}</span>
+            </div>
+            <button class="cust-btn cust-btn-full" style="margin-top:10px;width:100%;" onclick="applyCustomer(${custIndex}, ${ji})">Load This Job</button>
+        </div>`;
+    }).join('');
+    document.getElementById('custListPane').style.display = 'none';
+    document.getElementById('custHistoryPane').style.display = 'block';
+}
+
+function historyBack() {
+    document.getElementById('custHistoryPane').style.display = 'none';
+    document.getElementById('custListPane').style.display = 'block';
+}
+
+function applyCustomer(custIndex, jobIndex) {
+    const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+    const c = customers[custIndex];
+    if (!c) return;
+
+    // Always fill contact info
+    document.getElementById('customerName').value = c.name || '';
+    document.getElementById('customerEmail').value = c.email || '';
+    document.getElementById('customerPhone').value = c.phone || '';
+    document.getElementById('customerAddress').value = c.address || '';
+
+    if (jobIndex >= 0 && c.jobs && c.jobs[jobIndex]) {
+        const job = c.jobs[jobIndex];
+        document.getElementById('estimateDate').value = job.date || '';
+        document.getElementById('workOverview').value = job.workOverview || '';
+        vehicles = JSON.parse(JSON.stringify(job.vehicles || [{ year:'', make:'', model:'', number:'', parts:[], labor:[] }]));
+        currentVehicleIndex = 0;
+        documentType = job.documentType || 'estimate';
+        currentLanguage = job.language || 'en';
+        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-type') === documentType));
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === currentLanguage));
+        loadVehicle(0);
+        updateTranslations();
+    } else {
+        // New job for existing customer
+        document.getElementById('estimateDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('workOverview').value = '';
+        vehicles = [{ year:'', make:'', model:'', number:'', parts:[], labor:[] }];
+        currentVehicleIndex = 0;
+        loadVehicle(0);
+    }
+    closeCustomerModal();
+}
+
+function closeCustomerModal() {
+    document.getElementById('customerModal').style.display = 'none';
+}
+
+function filterCustomers() {
+    renderCustomerList(document.getElementById('custSearchInput').value);
 }
 
 function openPartsLibrary() {
@@ -1050,10 +1367,45 @@ function saveDraft() {
         vehicles, documentType, language: currentLanguage
     };
     localStorage.setItem('invoiceDraft', JSON.stringify(draft));
-    let customers = JSON.parse(localStorage.getItem('customers') || '[]');
-    const ci = customers.findIndex(c => c.phone === draft.customer.phone);
-    ci >= 0 ? customers[ci] = draft.customer : customers.push(draft.customer);
-    localStorage.setItem('customers', JSON.stringify(customers));
+
+    // Force an immediate customer history save (bypasses the 2s debounce)
+    clearTimeout(_autoSaveTimer);
+    const phone = draft.customer.phone.trim();
+    if (phone) {
+        let customers = JSON.parse(localStorage.getItem('customers') || '[]');
+        const ci = customers.findIndex(c => c.phone === phone);
+        const jobEntry = {
+            savedAt: new Date().toISOString(),
+            date: draft.customer.date,
+            workOverview: draft.customer.workOverview,
+            vehicles: JSON.parse(JSON.stringify(draft.vehicles)),
+            documentType: draft.documentType,
+            language: draft.language
+        };
+        if (ci >= 0) {
+            customers[ci].name = draft.customer.name;
+            customers[ci].email = draft.customer.email;
+            customers[ci].address = draft.customer.address;
+            customers[ci].jobs = customers[ci].jobs || [];
+            const last = customers[ci].jobs[0];
+            const minsSinceLast = last ? (Date.now() - new Date(last.savedAt)) / 60000 : 999;
+            if (minsSinceLast > 5) {
+                customers[ci].jobs.unshift(jobEntry);
+            } else {
+                customers[ci].jobs[0] = jobEntry;
+            }
+        } else {
+            customers.push({
+                name: draft.customer.name,
+                email: draft.customer.email,
+                phone: draft.customer.phone,
+                address: draft.customer.address,
+                jobs: [jobEntry]
+            });
+        }
+        localStorage.setItem('customers', JSON.stringify(customers));
+    }
+
     alert('Draft saved!'); toggleMenu();
 }
 
