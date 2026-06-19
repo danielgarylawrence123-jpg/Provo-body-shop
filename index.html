@@ -1045,15 +1045,9 @@
                 <label>Address</label>
                 <input type="text" id="billAddress" placeholder="123 Main St, City, State ZIP">
             </div>
-            <div class="form-row form-row-2">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="billEmail" placeholder="contact@insurance.com">
-                </div>
-                <div class="form-group">
-                    <label>Claim / Reference # (optional)</label>
-                    <input type="text" id="billClaimRef" placeholder="CLM-2024-00000">
-                </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="billEmail" placeholder="contact@insurance.com">
             </div>
         </div>
 
@@ -2131,11 +2125,8 @@ function addBillPart(listEl, data = {}) {
 }
 
 function removeBillPart(btn) {
-    const list = btn.parentElement.parentElement;
-    if (list.querySelectorAll('.part-item').length > 1) {
-        btn.parentElement.remove();
-        calcBillGrandTotal();
-    }
+    btn.parentElement.remove();
+    calcBillGrandTotal();
 }
 
 function addBillLabor(listEl, data = {}) {
@@ -2150,11 +2141,8 @@ function addBillLabor(listEl, data = {}) {
 }
 
 function removeBillLabor(btn) {
-    const list = btn.parentElement.parentElement;
-    if (list.querySelectorAll('.labor-item').length > 1) {
-        btn.parentElement.remove();
-        calcBillGrandTotal();
-    }
+    btn.parentElement.remove();
+    calcBillGrandTotal();
 }
 
 function calcBillCarTotal(cardEl) {
@@ -2211,7 +2199,6 @@ function collectBillData() {
         phone: document.getElementById('billPhone').value,
         address: document.getElementById('billAddress').value,
         email: document.getElementById('billEmail').value,
-        claimRef: document.getElementById('billClaimRef').value,
         cars
     };
 }
@@ -2224,7 +2211,6 @@ function loadBillDraft(data) {
     document.getElementById('billPhone').value = data.phone || '';
     document.getElementById('billAddress').value = data.address || '';
     document.getElementById('billEmail').value = data.email || '';
-    document.getElementById('billClaimRef').value = data.claimRef || '';
     document.getElementById('billCarList').innerHTML = '';
     (data.cars && data.cars.length ? data.cars : [{}]).forEach(car => addBillCar(car));
 }
@@ -2296,7 +2282,6 @@ function buildBillHTML(data) {
                     <div class="inv-doc-type" style="font-size:24px;">INSURANCE BILL</div>
                     <div class="inv-doc-number">${data.billNumber}</div>
                     <div class="inv-doc-date">${data.billDate}</div>
-                    ${data.claimRef ? '<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:3px;">Claim #: ' + data.claimRef + '</div>' : ''}
                 </div>
             </div>
             <div class="inv-divider"></div>
