@@ -837,6 +837,47 @@
             .inv-grand-amount { font-size: 24px; }
         }
 
+        /* ── BILL SECTION ── */
+        .bill-car-card {
+            background: var(--off-white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .bill-car-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--blue-pale);
+        }
+        .bill-car-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--blue-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .bill-grand-display {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--blue-dark) 100%);
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+        .bill-grand-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .bill-grand-row span:last-child { color: var(--blue-accent); }
+
         @media print {
             body { background: white; padding: 0; }
             .app-container { box-shadow: none; border-radius: 0; }
@@ -862,6 +903,7 @@
                 <div class="toggle-container">
                     <button class="toggle-btn active" data-type="estimate" onclick="setDocumentType('estimate')" data-lang-key="document_type_estimate">Estimate</button>
                     <button class="toggle-btn" data-type="invoice" onclick="setDocumentType('invoice')" data-lang-key="document_type_invoice">Invoice</button>
+                    <button class="toggle-btn" data-type="bill" onclick="activateBillTab()">Bill</button>
                 </div>
                 <div class="lang-selector">
                     <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
@@ -968,6 +1010,69 @@
             <button class="export-btn" id="btnJPG" onclick="runExport('exportJPG', this, '🖼️ Rendering...')">🖼️ Export JPG</button>
             <button class="export-btn" onclick="printInvoice()">🖨️ Print</button>
             <button class="export-btn" onclick="emailInvoice()">📧 Email</button>
+        </div>
+    </div>
+
+    <!-- INSURANCE BILL SECTION -->
+    <div id="billSection" class="content" style="display:none;">
+        <div class="section">
+            <h2 class="section-title">Insurance Bill</h2>
+            <div class="form-row form-row-2">
+                <div class="form-group">
+                    <label>Bill #</label>
+                    <input type="text" id="billNumber" readonly style="background:#e2e8f0;cursor:default;color:#475569;">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="billDate">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Insurance Company Name</label>
+                <input type="text" id="billCompanyName" placeholder="State Farm Insurance">
+            </div>
+            <div class="form-row form-row-2">
+                <div class="form-group">
+                    <label>Attn / Contact Person</label>
+                    <input type="text" id="billContactName" placeholder="John Smith">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="billPhone" placeholder="(555) 000-0000">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                <input type="text" id="billAddress" placeholder="123 Main St, City, State ZIP">
+            </div>
+            <div class="form-row form-row-2">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="billEmail" placeholder="contact@insurance.com">
+                </div>
+                <div class="form-group">
+                    <label>Claim / Reference # (optional)</label>
+                    <input type="text" id="billClaimRef" placeholder="CLM-2024-00000">
+                </div>
+            </div>
+        </div>
+
+        <div id="billCarList"></div>
+
+        <button class="btn btn-success" style="width:100%;margin-bottom:20px;font-size:14px;padding:12px;" onclick="addBillCar()">➕ Add Vehicle</button>
+
+        <div class="bill-grand-display">
+            <div class="bill-grand-row">
+                <span>INSURANCE BILL TOTAL</span>
+                <span id="billGrandTotal">$0.00</span>
+            </div>
+        </div>
+
+        <div class="export-buttons">
+            <button class="export-btn" onclick="previewBill()">👁 Preview Bill</button>
+            <button class="export-btn" id="btnBillPDF" onclick="runExport('exportBillPDF', this, '📄 Generating...')">📄 Export PDF</button>
+            <button class="export-btn" id="btnBillJPG" onclick="runExport('exportBillJPG', this, '🖼️ Rendering...')">🖼️ Export JPG</button>
+            <button class="export-btn" onclick="printBill()">🖨️ Print</button>
         </div>
     </div>
 </div>
@@ -1108,6 +1213,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('vehicleModel').addEventListener('input', scheduleAutoSave);
     document.getElementById('vehicleYear').addEventListener('input', scheduleAutoSave);
     document.getElementById('vehicleNumber').addEventListener('input', scheduleAutoSave);
+
+    // Bill section auto-save (delegated — covers all bill fields + dynamic car cards)
+    document.getElementById('billSection').addEventListener('input', scheduleBillAutoSave);
 });
 
 function setLanguage(lang) {
@@ -1126,7 +1234,13 @@ function updateTranslations() {
     });
 }
 
+function setBillMode(on) {
+    document.getElementById('billSection').style.display = on ? 'block' : 'none';
+    document.querySelector('.content').style.display = on ? 'none' : 'block';
+}
+
 function setDocumentType(type) {
+    setBillMode(false);
     documentType = type;
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
@@ -1889,6 +2003,469 @@ function emailInvoice() {
     const body = encodeURIComponent(`Dear ${cName},\n\nPlease find your ${docLabel.toLowerCase()} attached.\n\nThank you for choosing Provo Body Shop!\n\n649-442-3615\ngads_law@hotmail.com`);
     window.location.href = `mailto:${cEmail}?subject=${subject}&body=${body}`;
     alert('Please attach the PDF to the email before sending.');
+}
+
+/* ══════════════════════════════════════
+   INSURANCE BILL SECTION
+══════════════════════════════════════ */
+
+const BILL_DISCLAIMER = 'PAYMENT DISCLAIMER: Payment is due in full within 30 days of the invoice date. Provo Body Shop reserves the right to apply a late payment fee of 1.5% per month (18% per annum) on any outstanding balance after the due date. This bill is valid for 60 days from the date of issue. All repair work is documented and available for inspection upon request. Submission of this bill to an insurance provider constitutes a formal request for payment and does not waive any rights to collect from the vehicle owner in the event of non-payment by the insurer. Provo Body Shop is not responsible for delays caused by insurer processing timelines.';
+
+let _billAutoSaveTimer = null;
+function scheduleBillAutoSave() {
+    clearTimeout(_billAutoSaveTimer);
+    _billAutoSaveTimer = setTimeout(() => {
+        localStorage.setItem('billDraft', JSON.stringify(collectBillData()));
+    }, 2000);
+}
+
+function activateBillTab() {
+    setBillMode(true);
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.toggle-btn[data-type="bill"]').classList.add('active');
+    // Initialize on first use
+    if (document.getElementById('billCarList').children.length === 0) {
+        document.getElementById('billDate').value = new Date().toISOString().split('T')[0];
+        const billNum = parseInt(localStorage.getItem('billNumber') || '1');
+        document.getElementById('billNumber').value = 'B-' + String(billNum).padStart(4, '0');
+        const saved = localStorage.getItem('billDraft');
+        if (saved) {
+            loadBillDraft(JSON.parse(saved));
+        } else {
+            addBillCar();
+        }
+    }
+}
+
+function addBillCar(data = {}) {
+    const card = document.createElement('div');
+    card.className = 'bill-car-card';
+    const idx = document.getElementById('billCarList').children.length + 1;
+    card.innerHTML = `
+        <div class="bill-car-header">
+            <span class="bill-car-label">Vehicle ${idx}</span>
+            <button class="btn btn-danger" style="padding:6px 14px;font-size:12px;" onclick="removeBillCar(this)">🗑️ Remove</button>
+        </div>
+        <div class="form-row form-row-3">
+            <div class="form-group">
+                <label>Year</label>
+                <input type="text" class="bc-year" value="${data.year || ''}" placeholder="2020">
+            </div>
+            <div class="form-group">
+                <label>Make</label>
+                <input type="text" class="bc-make" value="${data.make || ''}" placeholder="Toyota">
+            </div>
+            <div class="form-group">
+                <label>Model</label>
+                <input type="text" class="bc-model" value="${data.model || ''}" placeholder="Camry">
+            </div>
+        </div>
+        <div class="form-row form-row-3">
+            <div class="form-group">
+                <label>Color</label>
+                <input type="text" class="bc-color" value="${data.color || ''}" placeholder="Silver">
+            </div>
+            <div class="form-group">
+                <label>VIN</label>
+                <input type="text" class="bc-vin" value="${data.vin || ''}" placeholder="1HGCM82633A004352">
+            </div>
+            <div class="form-group">
+                <label>License Plate</label>
+                <input type="text" class="bc-plate" value="${data.plate || ''}" placeholder="ABC-1234">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Work Description</label>
+            <textarea class="bc-desc" rows="3" placeholder="Describe all work performed on this vehicle...">${data.desc || ''}</textarea>
+        </div>
+        <h3 class="section-title">Parts</h3>
+        <div class="bc-parts-list parts-list"></div>
+        <button class="btn btn-primary" style="margin-top:6px;" onclick="addBillPart(this.previousElementSibling)">+ Add Part</button>
+        <h3 class="section-title" style="margin-top:20px;">Labor</h3>
+        <div class="bc-labor-list labor-list"></div>
+        <button class="btn btn-primary" style="margin-top:6px;" onclick="addBillLabor(this.previousElementSibling)">+ Add Labor</button>
+        <div class="total-section" style="margin-top:16px;">
+            <div class="total-row">
+                <span>Vehicle Subtotal</span>
+                <span class="bc-subtotal">$0.00</span>
+            </div>
+        </div>`;
+    document.getElementById('billCarList').appendChild(card);
+
+    const partsListEl = card.querySelector('.bc-parts-list');
+    const laborListEl = card.querySelector('.bc-labor-list');
+    (data.parts && data.parts.length ? data.parts : [{}]).forEach(p => addBillPart(partsListEl, p));
+    (data.labor && data.labor.length ? data.labor : [{}]).forEach(l => addBillLabor(laborListEl, l));
+    renumberBillCars();
+    calcBillGrandTotal();
+}
+
+function removeBillCar(btn) {
+    if (document.querySelectorAll('.bill-car-card').length === 1) {
+        alert('Cannot remove the last vehicle. Add another first.');
+        return;
+    }
+    if (confirm('Remove this vehicle from the bill?')) {
+        btn.closest('.bill-car-card').remove();
+        renumberBillCars();
+        calcBillGrandTotal();
+    }
+}
+
+function renumberBillCars() {
+    document.querySelectorAll('.bill-car-card .bill-car-label').forEach((label, i) => {
+        label.textContent = 'Vehicle ' + (i + 1);
+    });
+}
+
+function addBillPart(listEl, data = {}) {
+    const t = translations[currentLanguage];
+    const el = document.createElement('div');
+    el.className = 'part-item';
+    el.innerHTML = `
+        <div><input type="text" data-field="partName" value="${data.name || ''}" placeholder="${t.part_name || 'Part Name'}" oninput="calcBillGrandTotal()"></div>
+        <div><input type="number" data-field="quantity" value="${data.qty !== undefined ? data.qty : 1}" placeholder="${t.quantity || 'Qty'}" step="1" min="0" oninput="calcBillGrandTotal()"></div>
+        <div><input type="number" data-field="price" value="${data.price || ''}" placeholder="${t.unit_price || 'Unit Price'}" step="0.01" min="0" oninput="calcBillGrandTotal()"></div>
+        <button class="remove-btn" onclick="removeBillPart(this)">×</button>`;
+    listEl.appendChild(el);
+}
+
+function removeBillPart(btn) {
+    const list = btn.parentElement.parentElement;
+    if (list.querySelectorAll('.part-item').length > 1) {
+        btn.parentElement.remove();
+        calcBillGrandTotal();
+    }
+}
+
+function addBillLabor(listEl, data = {}) {
+    const t = translations[currentLanguage];
+    const el = document.createElement('div');
+    el.className = 'labor-item';
+    el.innerHTML = `
+        <div><input type="text" data-field="laborDesc" value="${data.description || ''}" placeholder="${t.description || 'Description'}" oninput="calcBillGrandTotal()"></div>
+        <div><input type="number" data-field="laborCost" value="${data.cost || ''}" placeholder="${t.cost || 'Cost'}" step="0.01" min="0" oninput="calcBillGrandTotal()"></div>
+        <button class="remove-btn" onclick="removeBillLabor(this)">×</button>`;
+    listEl.appendChild(el);
+}
+
+function removeBillLabor(btn) {
+    const list = btn.parentElement.parentElement;
+    if (list.querySelectorAll('.labor-item').length > 1) {
+        btn.parentElement.remove();
+        calcBillGrandTotal();
+    }
+}
+
+function calcBillCarTotal(cardEl) {
+    let total = 0;
+    cardEl.querySelectorAll('.bc-parts-list .part-item').forEach(item => {
+        total += (parseFloat(item.querySelector('[data-field="quantity"]').value) || 0) * (parseFloat(item.querySelector('[data-field="price"]').value) || 0);
+    });
+    cardEl.querySelectorAll('.bc-labor-list .labor-item').forEach(item => {
+        total += parseFloat(item.querySelector('[data-field="laborCost"]').value) || 0;
+    });
+    cardEl.querySelector('.bc-subtotal').textContent = fmt(total);
+    return total;
+}
+
+function calcBillGrandTotal() {
+    let grand = 0;
+    document.querySelectorAll('.bill-car-card').forEach(card => { grand += calcBillCarTotal(card); });
+    document.getElementById('billGrandTotal').textContent = fmt(grand);
+    return grand;
+}
+
+function collectBillData() {
+    const cars = [];
+    document.querySelectorAll('.bill-car-card').forEach(card => {
+        const parts = [];
+        card.querySelectorAll('.bc-parts-list .part-item').forEach(item => {
+            const name = item.querySelector('[data-field="partName"]').value;
+            const qty = parseFloat(item.querySelector('[data-field="quantity"]').value) || 0;
+            const price = parseFloat(item.querySelector('[data-field="price"]').value) || 0;
+            if (name || qty || price) parts.push({ name, qty, price });
+        });
+        const labor = [];
+        card.querySelectorAll('.bc-labor-list .labor-item').forEach(item => {
+            const desc = item.querySelector('[data-field="laborDesc"]').value;
+            const cost = parseFloat(item.querySelector('[data-field="laborCost"]').value) || 0;
+            if (desc || cost) labor.push({ description: desc, cost });
+        });
+        cars.push({
+            year: card.querySelector('.bc-year').value,
+            make: card.querySelector('.bc-make').value,
+            model: card.querySelector('.bc-model').value,
+            color: card.querySelector('.bc-color').value,
+            vin: card.querySelector('.bc-vin').value,
+            plate: card.querySelector('.bc-plate').value,
+            desc: card.querySelector('.bc-desc').value,
+            parts, labor
+        });
+    });
+    return {
+        billNumber: document.getElementById('billNumber').value,
+        billDate: document.getElementById('billDate').value,
+        companyName: document.getElementById('billCompanyName').value,
+        contactName: document.getElementById('billContactName').value,
+        phone: document.getElementById('billPhone').value,
+        address: document.getElementById('billAddress').value,
+        email: document.getElementById('billEmail').value,
+        claimRef: document.getElementById('billClaimRef').value,
+        cars
+    };
+}
+
+function loadBillDraft(data) {
+    document.getElementById('billNumber').value = data.billNumber || '';
+    document.getElementById('billDate').value = data.billDate || '';
+    document.getElementById('billCompanyName').value = data.companyName || '';
+    document.getElementById('billContactName').value = data.contactName || '';
+    document.getElementById('billPhone').value = data.phone || '';
+    document.getElementById('billAddress').value = data.address || '';
+    document.getElementById('billEmail').value = data.email || '';
+    document.getElementById('billClaimRef').value = data.claimRef || '';
+    document.getElementById('billCarList').innerHTML = '';
+    (data.cars && data.cars.length ? data.cars : [{}]).forEach(car => addBillCar(car));
+}
+
+function buildBillHTML(data) {
+    let vehicleBlocks = '', summaryRows = '', grandTotal = 0;
+
+    data.cars.forEach((car, i) => {
+        const vLabel = [car.year, car.make, car.model].filter(Boolean).join(' ') || ('Vehicle ' + (i + 1));
+        let vTotal = 0;
+        car.parts.forEach(p => vTotal += p.qty * p.price);
+        car.labor.forEach(l => vTotal += l.cost);
+        grandTotal += vTotal;
+
+        let partsRows = '';
+        if (car.parts.length) {
+            partsRows = `<tr class="inv-table-section-header"><td colspan="4" style="text-align:left">PARTS</td></tr>
+            <tr style="background:#dbeafe10"><th style="text-align:left">Description</th><th style="text-align:center">Qty</th><th style="text-align:center">Unit Price</th><th style="text-align:right">Total</th></tr>`;
+            car.parts.forEach(p => {
+                partsRows += `<tr><td style="text-align:left">${p.name || '—'}</td><td style="text-align:center">${p.qty}</td><td style="text-align:center">${fmt(p.price)}</td><td style="text-align:right;font-weight:600">${fmt(p.qty * p.price)}</td></tr>`;
+            });
+        }
+
+        let laborRows = '';
+        if (car.labor.length) {
+            laborRows = `<tr class="inv-table-section-header"><td colspan="4" style="text-align:left">LABOR</td></tr>
+            <tr style="background:#dbeafe10"><th colspan="3" style="text-align:left">Description</th><th style="text-align:right">Amount</th></tr>`;
+            car.labor.forEach(l => {
+                laborRows += `<tr class="inv-labor-row"><td colspan="3" style="text-align:left">${l.description || '—'}</td><td style="text-align:right;font-weight:600">${fmt(l.cost)}</td></tr>`;
+            });
+        }
+
+        const descSection = car.desc ? `
+            <div style="padding:12px 20px;background:#dbeafe22;border-left:3px solid #2563ab;">
+                <div style="font-size:10px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">WORK DESCRIPTION</div>
+                <div style="font-size:13px;color:#1e293b;line-height:1.6;">${car.desc}</div>
+            </div>` : '';
+
+        vehicleBlocks += `
+        <div class="inv-vehicle-block">
+            <div class="inv-vehicle-header">
+                <div class="inv-vehicle-title">Vehicle ${i + 1} &nbsp;·&nbsp; ${vLabel}${car.color ? ' · ' + car.color : ''}</div>
+                <div class="inv-vehicle-num">Plate: ${car.plate || '—'} &nbsp;|&nbsp; VIN: ${car.vin || '—'}</div>
+            </div>
+            ${descSection}
+            <table class="inv-table">
+                ${partsRows}
+                ${laborRows}
+                <tr class="inv-subtotal-row">
+                    <td colspan="3" style="text-align:left">Vehicle ${i + 1} Subtotal</td>
+                    <td style="text-align:right">${fmt(vTotal)}</td>
+                </tr>
+            </table>
+        </div>`;
+
+        summaryRows += `<div class="inv-summary-row"><span>Vehicle ${i + 1}: ${vLabel}</span><span>${fmt(vTotal)}</span></div>`;
+    });
+
+    return `
+    <div style="font-family:'Inter',sans-serif;color:#1e293b;">
+        <div class="inv-header">
+            <div class="inv-header-top">
+                <div>
+                    <div class="inv-company-name">Provo Body Shop</div>
+                    <div class="inv-company-tagline">Professional Auto Body Repair</div>
+                    <div class="inv-catchphrase">We take the <em>DENT</em> out of the <em>ACCIDENT</em></div>
+                </div>
+                <div class="inv-doc-badge">
+                    <div class="inv-doc-type" style="font-size:24px;">INSURANCE BILL</div>
+                    <div class="inv-doc-number">${data.billNumber}</div>
+                    <div class="inv-doc-date">${data.billDate}</div>
+                    ${data.claimRef ? '<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:3px;">Claim #: ' + data.claimRef + '</div>' : ''}
+                </div>
+            </div>
+            <div class="inv-divider"></div>
+        </div>
+        <div class="inv-address-row">
+            <div class="inv-from">
+                <div class="inv-address-label">FROM</div>
+                <div class="inv-address-content">
+                    <strong>Provo Body Shop</strong>
+                    gads_law@hotmail.com<br>
+                    649-442-3615<br>
+                    Norway Drive Kewtown<br>
+                    Providenciales, Turk and Caicos Islands
+                </div>
+            </div>
+            <div class="inv-to">
+                <div class="inv-address-label">BILL TO</div>
+                <div class="inv-address-content">
+                    <strong>${data.companyName || '—'}</strong>
+                    ${data.contactName ? 'Attn: ' + data.contactName + '<br>' : ''}
+                    ${data.address ? data.address + '<br>' : ''}
+                    ${data.phone ? data.phone + '<br>' : ''}
+                    ${data.email || ''}
+                </div>
+            </div>
+        </div>
+        <div class="inv-body">${vehicleBlocks}</div>
+        <div class="inv-footer">
+            <div class="inv-vehicle-summary">${summaryRows}</div>
+            <div class="inv-grand-total-row">
+                <div>
+                    <div class="inv-grand-label">INSURANCE BILL TOTAL</div>
+                    <div class="inv-grand-accent"></div>
+                </div>
+                <div class="inv-grand-amount">${fmt(grandTotal)}</div>
+            </div>
+        </div>
+        <div class="inv-disclaimer">
+            <div class="inv-disclaimer-title">⚠ Payment Disclaimer</div>
+            <div class="inv-disclaimer-text">${BILL_DISCLAIMER}</div>
+            <div class="inv-disclaimer-footer">Provo Body Shop &nbsp;·&nbsp; 649-442-3615 &nbsp;·&nbsp; gads_law@hotmail.com</div>
+        </div>
+    </div>`;
+}
+
+function previewBill() {
+    document.getElementById('invoiceDocument').innerHTML = buildBillHTML(collectBillData());
+    document.getElementById('previewModal').style.display = 'block';
+}
+
+async function renderBillCanvas() {
+    const allCSS = Array.from(document.styleSheets)
+        .map(ss => { try { return Array.from(ss.cssRules).map(r => r.cssText).join('\n'); } catch (e) { return ''; } })
+        .join('\n');
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:860px;background:white;z-index:-1;';
+    const styleEl = document.createElement('style');
+    styleEl.textContent = allCSS + `
+        .inv-header { padding: 36px 40px 28px !important; }
+        .inv-header-top { flex-direction: row !important; justify-content: space-between !important; align-items: flex-start !important; gap: 0 !important; }
+        .inv-doc-badge { text-align: right !important; }
+        .inv-address-row { flex-direction: row !important; padding: 28px 40px !important; gap: 30px !important; }
+        .inv-body { padding: 20px 40px !important; }
+        .inv-footer { padding: 0 40px 30px !important; }
+        .inv-grand-amount { font-size: 32px !important; }`;
+    wrapper.appendChild(styleEl);
+    const inner = document.createElement('div');
+    inner.innerHTML = buildBillHTML(collectBillData());
+    wrapper.appendChild(inner);
+    document.body.appendChild(wrapper);
+    await new Promise(r => setTimeout(r, 400));
+    const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, width: 860, scrollX: 0, scrollY: 0 });
+    document.body.removeChild(wrapper);
+    return canvas;
+}
+
+async function exportBillPDF() {
+    const canvas = await renderBillCanvas();
+    const { jsPDF } = window.jspdf;
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+    const pxW = canvas.width, pxH = canvas.height;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+    const pageW = 215.9, pageH = 279.4;
+    const imgAspect = pxW / pxH, pageAspect = pageW / pageH;
+    let finalW, finalH;
+    if (imgAspect > pageAspect) { finalW = pageW; finalH = pageW / imgAspect; }
+    else { finalH = pageH; finalW = pageH * imgAspect; }
+    doc.addImage(imgData, 'JPEG', (pageW - finalW) / 2, (pageH - finalH) / 2, finalW, finalH);
+    const billNum = (document.getElementById('billNumber').value || 'bill').replace('#', '');
+    doc.save('insurance_bill_' + billNum + '.pdf');
+}
+
+async function exportBillJPG() {
+    const canvas = await renderBillCanvas();
+    const link = document.createElement('a');
+    const billNum = (document.getElementById('billNumber').value || 'bill').replace('#', '');
+    link.download = 'insurance_bill_' + billNum + '.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+}
+
+function printBill() {
+    const billHTML = buildBillHTML(collectBillData());
+    const pw = window.open('', '', 'height=900,width=900');
+    pw.document.write(`<html><head><title>Insurance Bill - Provo Body Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Inter,sans-serif;background:#f0f4f8;}
+    .print-toolbar{background:linear-gradient(135deg,#0a1628,#1a3a6b);padding:12px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;}
+    .print-back-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:white;padding:8px 18px;border-radius:7px;cursor:pointer;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;}
+    .print-now-btn{background:#2563ab;border:none;color:white;padding:8px 18px;border-radius:7px;cursor:pointer;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;}
+    .print-toolbar-label{color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-left:auto;}
+    .doc-wrapper{max-width:860px;margin:20px auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+    .inv-header{background:linear-gradient(135deg,#0a1628 0%,#1e4d8c 60%,#2563ab 100%);padding:36px 40px 28px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-company-name{font-family:Montserrat,sans-serif;font-size:28px;font-weight:800;color:white;}
+    .inv-company-tagline{font-size:12px;color:#60a5fa;margin-top:5px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;}
+    .inv-catchphrase{margin-top:8px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);}
+    .inv-catchphrase em{font-style:normal;color:white;font-weight:800;}
+    .inv-doc-type{font-family:Montserrat,sans-serif;font-size:24px;font-weight:800;color:white;text-transform:uppercase;}
+    .inv-doc-number{font-size:14px;color:#60a5fa;margin-top:4px;font-weight:600;}
+    .inv-doc-date{font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;}
+    .inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;}
+    .inv-doc-badge{text-align:right;}
+    .inv-divider{height:4px;background:linear-gradient(90deg,#60a5fa 0%,#3b82cc 50%,transparent 100%);margin-top:24px;}
+    .inv-address-row{display:flex;justify-content:space-between;padding:28px 40px;background:#f8fafc;border-bottom:1px solid #e2e8f0;gap:30px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-from,.inv-to{flex:1;}
+    .inv-address-label{font-size:10px;font-weight:700;color:#2563ab;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+    .inv-address-content{font-size:13px;line-height:1.7;color:#1e293b;}
+    .inv-address-content strong{font-size:15px;font-weight:700;color:#0a1628;display:block;margin-bottom:2px;}
+    .inv-body{padding:20px 40px;}
+    .inv-vehicle-block{margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;page-break-inside:avoid;}
+    .inv-vehicle-header{background:linear-gradient(135deg,#0a1628 0%,#1a3a6b 100%);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-vehicle-title{font-family:Montserrat,sans-serif;font-size:14px;font-weight:700;color:white;}
+    .inv-vehicle-num{font-size:12px;color:#60a5fa;font-weight:500;}
+    .inv-table{width:100%;border-collapse:collapse;}
+    .inv-table-section-header td{font-size:10px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:1.5px;padding:8px 20px;background:#f1f5f9;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-table th{background:#dbeafe;padding:9px 20px;font-size:11px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:1px;text-align:left;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-table th:last-child{text-align:right;}
+    .inv-table th:nth-child(2),.inv-table th:nth-child(3){text-align:center;}
+    .inv-table td{padding:10px 20px;font-size:13px;color:#1e293b;border-bottom:1px solid #f1f5f9;}
+    .inv-table td:last-child{text-align:right;font-weight:600;}
+    .inv-table td:nth-child(2),.inv-table td:nth-child(3){text-align:center;color:#475569;}
+    .inv-labor-row td{color:#475569;}
+    .inv-subtotal-row{background:#dbeafe;border-top:2px solid #3b82cc;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-subtotal-row td{padding:11px 20px;font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;color:#1a3a6b!important;border-bottom:none!important;}
+    .inv-footer{background:linear-gradient(135deg,#0a1628 0%,#1a3a6b 100%);padding:0 40px 30px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-vehicle-summary{padding:20px 0 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;}
+    .inv-summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:rgba(255,255,255,0.7);}
+    .inv-summary-row span:last-child{font-weight:600;color:rgba(255,255,255,0.9);}
+    .inv-grand-total-row{display:flex;justify-content:space-between;align-items:center;padding-top:4px;}
+    .inv-grand-label{font-family:Montserrat,sans-serif;font-size:14px;font-weight:700;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:2px;}
+    .inv-grand-amount{font-family:Montserrat,sans-serif;font-size:32px;font-weight:800;color:white;}
+    .inv-grand-accent{width:50px;height:3px;background:linear-gradient(90deg,#60a5fa,transparent);margin-top:6px;}
+    .inv-disclaimer{padding:18px 40px;background:#f1f5f9;border-top:2px solid #dbeafe;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .inv-disclaimer-title{font-size:9px;font-weight:800;color:#1a3a6b;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;font-family:Montserrat,sans-serif;}
+    .inv-disclaimer-text{font-size:9px;color:#475569;line-height:1.6;}
+    .inv-disclaimer-footer{margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center;font-style:italic;}
+    @media print{.print-toolbar{display:none!important;}body{background:white;}.doc-wrapper{margin:0;border-radius:0;box-shadow:none;}}
+    @media(max-width:768px){.inv-header-top{flex-direction:row!important;}.inv-doc-badge{text-align:right!important;}.inv-address-row{flex-direction:row!important;gap:30px!important;}}
+    </style></head><body>
+    <div class="print-toolbar">
+        <button class="print-back-btn" onclick="window.close()">← Back to Editor</button>
+        <button class="print-now-btn" onclick="window.print()">🖨️ Print Now</button>
+        <span class="print-toolbar-label">Provo Body Shop · Insurance Bill</span>
+    </div>
+    <div class="doc-wrapper">${billHTML}</div>
+    </body></html>`);
+    pw.document.close();
 }
 
 // Init
